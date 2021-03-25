@@ -1,68 +1,75 @@
-var frontCamera = false;
-var currentStream;
-
-// Define constants
-// Get the element in the document with id="camera-view", "camera-device", "photo-display", "take-photo-button" and "front-camera-button"
-const
-    cameraView = document.querySelector("#camera-view"),
-    cameraDevice = document.querySelector("#camera-device"),
-    photoDisplay = document.querySelector("#photo-display"),
-    takePhotoButton = document.querySelector("#take-photo-button");
-    frontCameraButton = document.querySelector("#front-camera-button");
-
-// Access the device camera and stream to cameraDevice
-function cameraStart() {
-    // Stop the video streaming before access the media device
-    if (typeof currentStream !== 'undefined') {
-        currentStream.getTracks().forEach(track => {
-            track.stop();
-        });
+function initialize() {
+    var status = "* Offline *";
+    if (navigator.onLine) {
+        status = "* Online *";
+        retrieveContacts();
+    } else {
+        const localStorage = window.localStorage;
+        if (localStorage) {
+            const contacts = localStorage.getItem("contacts");
+            if (contacts) {
+                displayContacts(JSON.parse(contacts));
+            }
+        }
     }
 
-// Set constraints for the video stream
-// If frontCamera is true, use front camera
-// Otherwise, user back camera
-// "user" => Front camera
-// "environment" => Back camera
-    var constraints = { video: { facingMode: (frontCamera? "user" : "environment") }, audio: false };
-    
-    // Access the media device, camera in this example
-    navigator.mediaDevices
-        .getUserMedia(constraints)
-        .then(function(stream) {
-            currentStream = stream;
-            cameraDevice.srcObject = stream;
-        })
-        .catch(function(error) {
-            console.error("Error happened.", error);
-        });
+    document.getElementById("status").innerHTML = status;
+
+    document.body.addEventListener(
+            "online",
+            function () {
+                document.getElementById("status").innerHTML = "Online";
+            },
+            false
+            );
+    document.body.addEventListener(
+            "offline",
+            function () {
+                document.getElementById("status").innerHTML = "Offline";
+            },
+            false
+            );
 }
 
-// If takePhotoButton clicked => Take and display a photo
-takePhotoButton.onclick = function() {
-    cameraView.width = cameraDevice.videoWidth;
-    cameraView.height = cameraDevice.videoHeight;
-    cameraView.getContext("2d").drawImage(cameraDevice, 0, 0);
-    photoDisplay.src = cameraView.toDataURL("image/webp");
-    photoDisplay.classList.add("photo-taken");
-};
+function retrieveContacts() {
+    const xhr = new XMLHttpRequest();
+    const url = "contacts.json";
+    //const url = "https://ouhklab.github.io/contact-info-mobile-web-app";
 
-// If Front/Back camera is click => Change to front/back camera accordingly
-frontCameraButton.onclick = function() {
-    // Toggle the frontCamera variable
-    frontCamera = !frontCamera;
-    // Setup the button text
-    if (frontCamera) {
-        frontCameraButton.textContent = "Back Camera";
-    }
-    else {
-        frontCameraButton.textContent = "Front Camera";
-    }
-    // Start the video streaming
-    cameraStart();
-};
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            var contacts = JSON.parse(xhr.response).contacts;
+            displayContacts(contacts);
 
-// Start the camera and video streaming when the window loads
-// 1st parameter: Event type
-// 2nd parameter: Function to be called when the event occurs
-window.addEventListener("load", cameraStart);
+            // Store contact data to localstorage
+            const localStorage = window.localStorage;
+            if (localStorage) {
+                localStorage.setItem("contacts", JSON.stringify(contacts));
+            }
+        }
+    };
+
+    xhr.open("get", url);
+    xhr.send();
+}
+
+function displayContacts(contacts) {
+    contacts.forEach(addRow);
+}
+
+function addRow(contact) {
+    var tcontent = document.getElementById("tcontent");
+    var row = tcontent.insertRow();
+
+    var nameCell = row.insertCell();
+    nameCell.setAttribute('data-label', "Name");
+    nameCell.innerHTML = contact.name;
+
+    var addressCell = row.insertCell();
+    addressCell.setAttribute('data-label', "Address");
+    addressCell.innerHTML = contact.address;
+
+    var emailCell = row.insertCell();
+    emailCell.setAttribute('data-label', "Email");
+    emailCell.innerHTML = contact.email;
+}
