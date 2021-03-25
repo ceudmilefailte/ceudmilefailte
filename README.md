@@ -1,6 +1,6 @@
 - 👋 Hi, I’m @ceudmilefailte
 - 👀 
-- 🌱 I’m currently studying computer science and Internet Technology
+- 🌱 I’m studying Computer Science and Internet Technology
 - 💞️ 
 - 📫 How to reach me ...
 
